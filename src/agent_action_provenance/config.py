@@ -29,7 +29,9 @@ class Settings(BaseSettings):
     # Agent callers: identity fabric (preferred) or local verification + policy.
     fabric_url: HttpUrl | None = None
     agent_issuer: str | None = None
-    agent_audience: str | None = None
+    agent_audience: str = Field(
+        default="agent-platform", description="aud of agent credentials (fabric default)"
+    )
     agent_jwks_url: str | None = None
     access_policy_file: Path = Path("policies/provenance-access.yaml")
 
@@ -77,12 +79,10 @@ class Settings(BaseSettings):
             ]
             if missing:
                 raise ValueError(f"signing configuration incomplete: {missing}")
-        if self.fabric_url is None and not (
-            self.agent_issuer and self.agent_audience and self.agent_jwks_url
-        ):
+        if self.fabric_url is None and not (self.agent_issuer and self.agent_jwks_url):
             raise ValueError(
-                "configure PROVENANCE_FABRIC_URL, or PROVENANCE_AGENT_ISSUER, "
-                "PROVENANCE_AGENT_AUDIENCE and PROVENANCE_AGENT_JWKS_URL for local verification"
+                "configure PROVENANCE_FABRIC_URL, or PROVENANCE_AGENT_ISSUER and "
+                "PROVENANCE_AGENT_JWKS_URL for local verification"
             )
         if self.archive_backend == "s3" and not self.archive_bucket:
             raise ValueError("PROVENANCE_ARCHIVE_BUCKET is required for the s3 archive")

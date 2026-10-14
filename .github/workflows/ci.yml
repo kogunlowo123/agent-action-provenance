@@ -111,17 +111,38 @@ jobs:
         run: docker build -t agent-action-provenance:ci .
       - name: Container smoke test (starts, serves log, MCP and A2A)
         run: |
-          docker run -d --name provenance -p 8080:8080             -e PROVENANCE_ENVIRONMENT=ci -e PROVENANCE_DEV_EPHEMERAL_KEYS=true             -e PROVENANCE_PUBLIC_URL=http://localhost:8080             -e PROVENANCE_DATABASE_URL=sqlite+aiosqlite:////tmp/provenance.db             -e PROVENANCE_AUDIT_LOG_PATH=/tmp/audit/audit.jsonl             -e PROVENANCE_ARCHIVE_DIR=/tmp/archive             -e PROVENANCE_AGENT_ISSUER=https://identity.ci -e PROVENANCE_AGENT_JWKS_URL=https://identity.ci/jwks             -e PROVENANCE_AUDITOR_ISSUER=https://login.ci -e PROVENANCE_AUDITOR_AUDIENCE=provenance             -e PROVENANCE_AUDITOR_JWKS_URL=https://login.ci/jwks             agent-action-provenance:ci
+          trap 'docker logs provenance' EXIT
+          docker run -d --name provenance -p 8080:8080 \
+            -e PROVENANCE_ENVIRONMENT=ci -e PROVENANCE_DEV_EPHEMERAL_KEYS=true \
+            -e PROVENANCE_PUBLIC_URL=http://localhost:8080 \
+            -e PROVENANCE_DATABASE_URL=sqlite+aiosqlite:////tmp/provenance.db \
+            -e PROVENANCE_AUDIT_LOG_PATH=/tmp/audit/audit.jsonl \
+            -e PROVENANCE_ARCHIVE_DIR=/tmp/archive \
+            -e PROVENANCE_AGENT_ISSUER=https://identity.ci \
+            -e PROVENANCE_AGENT_JWKS_URL=https://identity.ci/jwks \
+            -e PROVENANCE_AUDITOR_ISSUER=https://login.ci \
+            -e PROVENANCE_AUDITOR_AUDIENCE=provenance \
+            -e PROVENANCE_AUDITOR_JWKS_URL=https://login.ci/jwks \
+            agent-action-provenance:ci
           for i in $(seq 1 30); do
             curl -sf http://localhost:8080/readyz && break; sleep 1
           done
           curl -sf http://localhost:8080/v1/log/tree-head | grep -q '"tree_size":0'
           curl -sf http://localhost:8080/v1/log/public-key | grep -q Ed25519
           curl -sf http://localhost:8080/.well-known/agent-card.json | grep -q record-action
-          curl -sf -X POST http://localhost:8080/mcp             -H 'content-type: application/json' -H 'accept: application/json, text/event-stream'             -d '{"jsonrpc":"2.0","id":1,"method":"tools/list"}' | grep -q record_action
-          test "$(curl -s -o /dev/null -w '%{http_code}' -X POST http://localhost:8080/v1/records -H 'content-type: application/json' -d '{}')" = 401
+          curl -sf -X POST http://localhost:8080/mcp \
+            -H 'content-type: application/json' \
+            -H 'accept: application/json, text/event-stream' \
+            -d '{"jsonrpc":"2.0","id":1,"method":"tools/list"}' | grep -q record_action
+          status=$(curl -s -o /dev/null -w '%{http_code}' -X POST http://localhost:8080/v1/records \
+            -H 'content-type: application/json' -d '{}')
+          test "$status" = 401
           docker inspect --format '{{.Config.User}}' agent-action-provenance:ci | grep -q 10001
-          docker logs provenance
+          for i in $(seq 1 15); do
+            docker exec provenance test -f /tmp/archive/batches/00000000000000000000.json && break
+            sleep 1
+          done
+          docker exec provenance test -f /tmp/archive/batches/00000000000000000000.json
       - name: Image vulnerability scan (Trivy)
         uses: aquasecurity/trivy-action@v0.36.0
         with:

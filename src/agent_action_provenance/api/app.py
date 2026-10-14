@@ -60,6 +60,7 @@ def create_app(factory: ContainerFactory, *, mcp_allowed_hosts: list[str] | None
         container = await factory()
         app.state.container = container
         settings = container.settings
+        container.archive_due.set()  # archive anything sealed before this start
         tasks = [
             asyncio.create_task(archive_forever(container, settings.archive_interval_s)),
             asyncio.create_task(monitor_forever(container, settings.monitor_interval_s)),

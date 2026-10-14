@@ -90,7 +90,7 @@ def _authorizer(
     if settings.fabric_url is not None:
         url = str(settings.fabric_url)
         return FabricAuthorizer(IdentityFabricClient(url, client=http), fabric_url=url)
-    if not (settings.agent_issuer and settings.agent_audience and settings.agent_jwks_url):
+    if not (settings.agent_issuer and settings.agent_jwks_url):
         raise ValueError("agent verification is not configured")  # pragma: no cover - validated
     return LocalPolicyAuthorizer(
         agent_resolver or RemoteJwks(settings.agent_jwks_url, client=http),
