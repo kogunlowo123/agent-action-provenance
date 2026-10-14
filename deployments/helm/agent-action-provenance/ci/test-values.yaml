@@ -1,0 +1,22 @@
+# Values used by CI to render and schema-validate the chart (helm lint,
+# helm template | kubeconform). They describe a complete, valid deployment.
+provenance:
+  publicUrl: https://provenance.agents.ci.internal
+  fabricUrl: https://identity.agents.ci.internal
+  auditor:
+    issuer: https://login.ci.internal
+    audience: agent-action-provenance
+    jwksUrl: https://login.ci.internal/jwks
+  archive:
+    backend: s3
+    bucket: agent-action-provenance-archive-ci
+    region: us-east-1
+secrets:
+  logKeyFile: log-2026-10.pem
+  auditKeyFile: audit-2026-10.pem
+ingress:
+  enabled: true
+  className: nginx
+  host: provenance.agents.ci.internal
+serviceMonitor:
+  enabled: true

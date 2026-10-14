@@ -1,0 +1,94 @@
+# PrometheusRule-compatible alert rules. Load with the Prometheus Operator
+# (wrap in a PrometheusRule) or a rule_files entry.
+# SLOs (docs/architecture/agent-specification.md):
+#   availability  99.9% of record submissions succeed (non-5xx)
+#   latency       p99 POST /v1/records < 500 ms (includes group commit wait)
+#   durability    every sealed batch reaches WORM storage within 15 minutes
+#   integrity     zero failed self-monitoring checks
+groups:
+  - name: agent-action-provenance.slo
+    rules:
+      - record: provenance:record_errors:ratio_5m
+        expr: |
+          sum(rate(provenance_http_request_duration_seconds_count{route="/v1/records",method="POST",status=~"5.."}[5m]))
+          /
+          clamp_min(sum(rate(provenance_http_request_duration_seconds_count{route="/v1/records",method="POST"}[5m])), 1e-9)
+
+      - alert: ProvenanceErrorBudgetBurnFast
+        expr: provenance:record_errors:ratio_5m > (14.4 * 0.001)
+        for: 5m
+        labels: {severity: page}
+        annotations:
+          summary: Record submissions failing; agent actions may be going unrecorded
+          runbook: docs/runbooks/incident-response.md#record-failures
+
+      - alert: ProvenanceRecordLatencyHigh
+        expr: |
+          histogram_quantile(0.99, sum by (le) (
+            rate(provenance_http_request_duration_seconds_bucket{route="/v1/records",method="POST"}[5m])
+          )) > 0.5
+        for: 10m
+        labels: {severity: ticket}
+        annotations:
+          summary: p99 POST /v1/records above 500 ms
+          runbook: docs/runbooks/monitoring.md#latency
+
+  - name: agent-action-provenance.integrity
+    rules:
+      - alert: ProvenanceLogIntegrityFailure
+        expr: increase(provenance_integrity_checks_total{result="failed"}[10m]) > 0
+        labels: {severity: page}
+        annotations:
+          summary: Stored log no longer matches a signed tree head (tampering or corruption)
+          runbook: docs/runbooks/incident-response.md#integrity-failure
+
+      - alert: ProvenanceIntegrityChecksStopped
+        expr: sum(increase(provenance_integrity_checks_total[15m])) == 0
+        for: 15m
+        labels: {severity: ticket}
+        annotations:
+          summary: Self-monitoring of the transparency log is not running
+          runbook: docs/runbooks/monitoring.md#self-monitoring
+
+      - alert: ProvenanceArchiveBacklog
+        expr: max(provenance_archive_backlog) > 30
+        for: 15m
+        labels: {severity: page}
+        annotations:
+          summary: Sealed batches are not reaching WORM storage
+          runbook: docs/runbooks/incident-response.md#archive-backlog
+
+      - alert: ProvenanceBatchCommitFailures
+        expr: sum(increase(provenance_batch_failures_total[10m])) > 0
+        labels: {severity: page}
+        annotations:
+          summary: Batches failed to commit to the ledger database
+          runbook: docs/runbooks/incident-response.md#record-failures
+
+  - name: agent-action-provenance.governance
+    rules:
+      - alert: ProvenanceGovernanceViolations
+        expr: sum by (code) (increase(provenance_governance_findings_total{severity="violation"}[15m])) > 0
+        labels: {severity: ticket}
+        annotations:
+          summary: Agents executed actions that violate governance ({{ $labels.code }})
+          runbook: docs/runbooks/incident-response.md#governance-violation
+
+      - alert: ProvenanceAuthorizationDenySpike
+        expr: |
+          sum(rate(provenance_authorization_decisions_total{decision!="allow"}[10m]))
+          /
+          clamp_min(sum(rate(provenance_authorization_decisions_total[10m])), 1e-9) > 0.2
+        for: 15m
+        labels: {severity: ticket}
+        annotations:
+          summary: More than 20% of caller authorization decisions are denials
+          runbook: docs/runbooks/incident-response.md#deny-spike
+
+      - alert: ProvenanceNotReady
+        expr: sum(up{job="agent-action-provenance"}) < 2
+        for: 5m
+        labels: {severity: page}
+        annotations:
+          summary: Fewer than two provenance replicas are being scraped
+          runbook: docs/runbooks/incident-response.md#replicas-down

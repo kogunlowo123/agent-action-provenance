@@ -1,0 +1,592 @@
+{
+  "$defs": {
+    "ActionDetails": {
+      "additionalProperties": false,
+      "properties": {
+        "ended_at": {
+          "format": "date-time",
+          "title": "Ended At",
+          "type": "string"
+        },
+        "name": {
+          "description": "e.g. fhir:write:task",
+          "pattern": "^[a-z0-9][a-z0-9_.:*-]{0,199}$",
+          "title": "Name",
+          "type": "string"
+        },
+        "risk": {
+          "$ref": "#/$defs/RiskLevel"
+        },
+        "started_at": {
+          "format": "date-time",
+          "title": "Started At",
+          "type": "string"
+        },
+        "status": {
+          "$ref": "#/$defs/ActionStatus"
+        },
+        "target": {
+          "description": "Resource acted upon",
+          "maxLength": 2048,
+          "minLength": 1,
+          "title": "Target",
+          "type": "string"
+        },
+        "tool": {
+          "anyOf": [
+            {
+              "maxLength": 200,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "MCP tool or API invoked",
+          "title": "Tool"
+        }
+      },
+      "required": [
+        "name",
+        "target",
+        "risk",
+        "status",
+        "started_at",
+        "ended_at"
+      ],
+      "title": "ActionDetails",
+      "type": "object"
+    },
+    "ActionStatus": {
+      "enum": [
+        "executed",
+        "blocked",
+        "pending_approval",
+        "failed"
+      ],
+      "title": "ActionStatus",
+      "type": "string"
+    },
+    "ActionSubmission": {
+      "additionalProperties": false,
+      "description": "What an agent (or the gateway acting for it) submits after an action.",
+      "properties": {
+        "action": {
+          "$ref": "#/$defs/ActionDetails"
+        },
+        "action_id": {
+          "description": "Client-chosen idempotency key, unique per agent",
+          "pattern": "^[A-Za-z0-9._:-]{8,128}$",
+          "title": "Action Id",
+          "type": "string"
+        },
+        "agent_id": {
+          "maxLength": 512,
+          "title": "Agent Id",
+          "type": "string"
+        },
+        "authorization": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/AuthorizationRecord"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "correlation_id": {
+          "anyOf": [
+            {
+              "maxLength": 128,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Correlation Id"
+        },
+        "decision": {
+          "$ref": "#/$defs/DecisionRecord"
+        },
+        "evidence": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/EvidenceItem"
+          },
+          "maxItems": 256,
+          "title": "Evidence",
+          "type": "array"
+        },
+        "on_behalf_of": {
+          "default": [],
+          "description": "Delegation chain, nearest principal first",
+          "items": {
+            "maxLength": 512,
+            "minLength": 3,
+            "type": "string"
+          },
+          "maxItems": 10,
+          "title": "On Behalf Of",
+          "type": "array"
+        },
+        "outputs": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/OutputArtifact"
+          },
+          "maxItems": 256,
+          "title": "Outputs",
+          "type": "array"
+        }
+      },
+      "required": [
+        "action_id",
+        "agent_id",
+        "action",
+        "decision"
+      ],
+      "title": "ActionSubmission",
+      "type": "object"
+    },
+    "ApprovalRecord": {
+      "additionalProperties": false,
+      "properties": {
+        "approved_at": {
+          "format": "date-time",
+          "title": "Approved At",
+          "type": "string"
+        },
+        "approver": {
+          "maxLength": 512,
+          "minLength": 3,
+          "title": "Approver",
+          "type": "string"
+        },
+        "reference": {
+          "description": "Ticket or change ID",
+          "maxLength": 200,
+          "minLength": 1,
+          "title": "Reference",
+          "type": "string"
+        }
+      },
+      "required": [
+        "approver",
+        "approved_at",
+        "reference"
+      ],
+      "title": "ApprovalRecord",
+      "type": "object"
+    },
+    "AuthorizationRecord": {
+      "additionalProperties": false,
+      "properties": {
+        "approval": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ApprovalRecord"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "authorizer": {
+          "maxLength": 512,
+          "minLength": 1,
+          "title": "Authorizer",
+          "type": "string"
+        },
+        "decided_at": {
+          "format": "date-time",
+          "title": "Decided At",
+          "type": "string"
+        },
+        "decision": {
+          "$ref": "#/$defs/Decision"
+        },
+        "matched_rules": {
+          "default": [],
+          "items": {
+            "type": "string"
+          },
+          "maxItems": 64,
+          "title": "Matched Rules",
+          "type": "array"
+        },
+        "policy_digest": {
+          "pattern": "^sha256:[0-9a-f]{64}$",
+          "title": "Policy Digest",
+          "type": "string"
+        },
+        "policy_name": {
+          "maxLength": 200,
+          "minLength": 1,
+          "title": "Policy Name",
+          "type": "string"
+        },
+        "policy_version": {
+          "maxLength": 100,
+          "minLength": 1,
+          "title": "Policy Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "decision",
+        "authorizer",
+        "policy_name",
+        "policy_version",
+        "policy_digest",
+        "decided_at"
+      ],
+      "title": "AuthorizationRecord",
+      "type": "object"
+    },
+    "DataClassification": {
+      "description": "Sensitivity label. Ordered from least to most restricted.",
+      "enum": [
+        0,
+        1,
+        2,
+        3
+      ],
+      "title": "DataClassification",
+      "type": "integer"
+    },
+    "Decision": {
+      "description": "Outcome of a policy or security evaluation.",
+      "enum": [
+        "allow",
+        "deny",
+        "require_approval"
+      ],
+      "title": "Decision",
+      "type": "string"
+    },
+    "DecisionRecord": {
+      "additionalProperties": false,
+      "properties": {
+        "confidence": {
+          "anyOf": [
+            {
+              "maximum": 1.0,
+              "minimum": 0.0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Confidence"
+        },
+        "model": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ModelInvocation"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "rationale": {
+          "default": "",
+          "maxLength": 8000,
+          "title": "Rationale",
+          "type": "string"
+        },
+        "summary": {
+          "maxLength": 2000,
+          "minLength": 1,
+          "title": "Summary",
+          "type": "string"
+        }
+      },
+      "required": [
+        "summary"
+      ],
+      "title": "DecisionRecord",
+      "type": "object"
+    },
+    "EvidenceItem": {
+      "additionalProperties": false,
+      "description": "An input the decision relied on. Content is referenced, never embedded.",
+      "properties": {
+        "classification": {
+          "$ref": "#/$defs/DataClassification"
+        },
+        "derived_from": {
+          "default": [],
+          "items": {
+            "pattern": "^sha256:[0-9a-f]{64}$",
+            "type": "string"
+          },
+          "maxItems": 64,
+          "title": "Derived From",
+          "type": "array"
+        },
+        "digest": {
+          "pattern": "^sha256:[0-9a-f]{64}$",
+          "title": "Digest",
+          "type": "string"
+        },
+        "kind": {
+          "$ref": "#/$defs/EvidenceKind"
+        },
+        "media_type": {
+          "default": "application/octet-stream",
+          "maxLength": 255,
+          "title": "Media Type",
+          "type": "string"
+        },
+        "retrieved_at": {
+          "format": "date-time",
+          "title": "Retrieved At",
+          "type": "string"
+        },
+        "trust": {
+          "$ref": "#/$defs/TrustLevel"
+        },
+        "uri": {
+          "maxLength": 2048,
+          "minLength": 1,
+          "title": "Uri",
+          "type": "string"
+        }
+      },
+      "required": [
+        "uri",
+        "digest",
+        "kind",
+        "trust",
+        "classification",
+        "retrieved_at"
+      ],
+      "title": "EvidenceItem",
+      "type": "object"
+    },
+    "EvidenceKind": {
+      "enum": [
+        "document",
+        "retrieval",
+        "tool_output",
+        "model_output",
+        "human_input",
+        "record"
+      ],
+      "title": "EvidenceKind",
+      "type": "string"
+    },
+    "GovernanceAssessment": {
+      "properties": {
+        "compliant": {
+          "title": "Compliant",
+          "type": "boolean"
+        },
+        "findings": {
+          "items": {
+            "$ref": "#/$defs/GovernanceFinding"
+          },
+          "title": "Findings",
+          "type": "array"
+        }
+      },
+      "required": [
+        "compliant",
+        "findings"
+      ],
+      "title": "GovernanceAssessment",
+      "type": "object"
+    },
+    "GovernanceFinding": {
+      "properties": {
+        "code": {
+          "title": "Code",
+          "type": "string"
+        },
+        "detail": {
+          "title": "Detail",
+          "type": "string"
+        },
+        "severity": {
+          "$ref": "#/$defs/Severity"
+        }
+      },
+      "required": [
+        "code",
+        "severity",
+        "detail"
+      ],
+      "title": "GovernanceFinding",
+      "type": "object"
+    },
+    "ModelInvocation": {
+      "additionalProperties": false,
+      "properties": {
+        "model": {
+          "maxLength": 200,
+          "minLength": 1,
+          "title": "Model",
+          "type": "string"
+        },
+        "prompt_digest": {
+          "pattern": "^sha256:[0-9a-f]{64}$",
+          "title": "Prompt Digest",
+          "type": "string"
+        },
+        "provider": {
+          "maxLength": 100,
+          "minLength": 1,
+          "title": "Provider",
+          "type": "string"
+        },
+        "response_digest": {
+          "pattern": "^sha256:[0-9a-f]{64}$",
+          "title": "Response Digest",
+          "type": "string"
+        }
+      },
+      "required": [
+        "provider",
+        "model",
+        "prompt_digest",
+        "response_digest"
+      ],
+      "title": "ModelInvocation",
+      "type": "object"
+    },
+    "OutputArtifact": {
+      "additionalProperties": false,
+      "description": "Something the action produced or changed.",
+      "properties": {
+        "classification": {
+          "$ref": "#/$defs/DataClassification"
+        },
+        "derived_from": {
+          "default": [],
+          "items": {
+            "pattern": "^sha256:[0-9a-f]{64}$",
+            "type": "string"
+          },
+          "maxItems": 64,
+          "title": "Derived From",
+          "type": "array"
+        },
+        "digest": {
+          "pattern": "^sha256:[0-9a-f]{64}$",
+          "title": "Digest",
+          "type": "string"
+        },
+        "media_type": {
+          "default": "application/octet-stream",
+          "maxLength": 255,
+          "title": "Media Type",
+          "type": "string"
+        },
+        "uri": {
+          "maxLength": 2048,
+          "minLength": 1,
+          "title": "Uri",
+          "type": "string"
+        }
+      },
+      "required": [
+        "uri",
+        "digest",
+        "classification"
+      ],
+      "title": "OutputArtifact",
+      "type": "object"
+    },
+    "RiskLevel": {
+      "description": "Action risk tier. Ordered so policies can compare with ``>=``.",
+      "enum": [
+        1,
+        2,
+        3,
+        4
+      ],
+      "title": "RiskLevel",
+      "type": "integer"
+    },
+    "Severity": {
+      "enum": [
+        "info",
+        "warning",
+        "violation"
+      ],
+      "title": "Severity",
+      "type": "string"
+    },
+    "TrustLevel": {
+      "description": "Trust assigned to a piece of content based on its origin.\n\nSYSTEM content is authored by the platform operator. VERIFIED content\ncomes from an authenticated, integrity-checked source. USER content is\nsupplied by an authenticated principal. EXTERNAL content (web pages,\nretrieved documents, tool output) is never trusted to carry instructions.",
+      "enum": [
+        0,
+        1,
+        2,
+        3
+      ],
+      "title": "TrustLevel",
+      "type": "integer"
+    }
+  },
+  "$id": "https://github.com/kogunlowo123/agent-action-provenance/schemas/provenance-record.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "description": "The sealed record. ``leaf_bytes`` is exactly what the Merkle leaf hashes.",
+  "properties": {
+    "governance": {
+      "$ref": "#/$defs/GovernanceAssessment"
+    },
+    "prov": {
+      "additionalProperties": true,
+      "title": "Prov",
+      "type": "object"
+    },
+    "record_id": {
+      "title": "Record Id",
+      "type": "string"
+    },
+    "recorded_at": {
+      "format": "date-time",
+      "title": "Recorded At",
+      "type": "string"
+    },
+    "recorded_by": {
+      "title": "Recorded By",
+      "type": "string"
+    },
+    "schema_version": {
+      "default": "aap-record/v1",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "submission": {
+      "$ref": "#/$defs/ActionSubmission"
+    },
+    "submission_digest": {
+      "pattern": "^sha256:[0-9a-f]{64}$",
+      "title": "Submission Digest",
+      "type": "string"
+    }
+  },
+  "required": [
+    "record_id",
+    "recorded_at",
+    "recorded_by",
+    "submission",
+    "submission_digest",
+    "prov",
+    "governance"
+  ],
+  "title": "ProvenanceRecord",
+  "type": "object"
+}

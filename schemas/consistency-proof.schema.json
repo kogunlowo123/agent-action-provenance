@@ -1,0 +1,30 @@
+{
+  "$id": "https://github.com/kogunlowo123/agent-action-provenance/schemas/consistency-proof.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "properties": {
+    "first": {
+      "minimum": 0,
+      "title": "First",
+      "type": "integer"
+    },
+    "proof": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Proof",
+      "type": "array"
+    },
+    "second": {
+      "minimum": 0,
+      "title": "Second",
+      "type": "integer"
+    }
+  },
+  "required": [
+    "first",
+    "second",
+    "proof"
+  ],
+  "title": "ConsistencyProof",
+  "type": "object"
+}

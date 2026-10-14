@@ -1,0 +1,41 @@
+# Governance of auditor evidence exports (POST /v1/exports).
+# Combining: deny overrides, then require_approval, then allow; default deny.
+# Every non-deny rule requires the provenance-auditor role, so requests from
+# anyone else fall through to the default deny.
+# Subject: the authenticated auditor (kind=user, roles from the enterprise IdP).
+# Resource: evidence-bundle with classification = highest classification of
+# any evidence or output in the selected records, and attributes
+# record_count and non_compliant.
+# classification: 0=PUBLIC 1=INTERNAL 2=CONFIDENTIAL 3=RESTRICTED
+name: evidence-export
+version: "2026.10.0"
+rules:
+  - id: deny-service-principals
+    description: Evidence leaves the system only at the request of a named human auditor.
+    effect: deny
+    actions: ["provenance:export"]
+    conditions:
+      - {attribute: subject.kind, operator: ne, value: user}
+
+  - id: approve-restricted-evidence
+    description: Bundles containing RESTRICTED data (PHI, PII, GxP records) need a second approver.
+    effect: require_approval
+    actions: ["provenance:export"]
+    conditions:
+      - {attribute: subject.roles, operator: contains, value: provenance-auditor}
+      - {attribute: resource.classification, operator: gte, value: 3}
+
+  - id: approve-bulk-export
+    description: Exports of more than 500 records need a second approver.
+    effect: require_approval
+    actions: ["provenance:export"]
+    conditions:
+      - {attribute: subject.roles, operator: contains, value: provenance-auditor}
+      - {attribute: resource.record_count, operator: gt, value: 500}
+
+  - id: allow-auditor-export
+    description: Auditors may export evidence up to CONFIDENTIAL without further approval.
+    effect: allow
+    actions: ["provenance:export"]
+    conditions:
+      - {attribute: subject.roles, operator: contains, value: provenance-auditor}

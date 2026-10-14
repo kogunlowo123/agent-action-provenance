@@ -1,0 +1,79 @@
+{
+  "$id": "https://github.com/kogunlowo123/agent-action-provenance/schemas/export.response.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "properties": {
+    "approved_at": {
+      "anyOf": [
+        {
+          "format": "date-time",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "title": "Approved At"
+    },
+    "approved_by": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "title": "Approved By"
+    },
+    "created_at": {
+      "format": "date-time",
+      "title": "Created At",
+      "type": "string"
+    },
+    "export_id": {
+      "title": "Export Id",
+      "type": "string"
+    },
+    "matched_rules": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Matched Rules",
+      "type": "array"
+    },
+    "max_classification": {
+      "title": "Max Classification",
+      "type": "integer"
+    },
+    "policy_decision": {
+      "title": "Policy Decision",
+      "type": "string"
+    },
+    "record_count": {
+      "title": "Record Count",
+      "type": "integer"
+    },
+    "requested_by": {
+      "title": "Requested By",
+      "type": "string"
+    },
+    "status": {
+      "title": "Status",
+      "type": "string"
+    }
+  },
+  "required": [
+    "export_id",
+    "status",
+    "requested_by",
+    "created_at",
+    "record_count",
+    "max_classification",
+    "policy_decision",
+    "matched_rules",
+    "approved_by",
+    "approved_at"
+  ],
+  "title": "ExportView",
+  "type": "object"
+}

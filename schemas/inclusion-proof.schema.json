@@ -1,0 +1,36 @@
+{
+  "$id": "https://github.com/kogunlowo123/agent-action-provenance/schemas/inclusion-proof.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "properties": {
+    "audit_path": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Audit Path",
+      "type": "array"
+    },
+    "leaf_hash": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Leaf Hash",
+      "type": "string"
+    },
+    "leaf_index": {
+      "minimum": 0,
+      "title": "Leaf Index",
+      "type": "integer"
+    },
+    "tree_size": {
+      "minimum": 1,
+      "title": "Tree Size",
+      "type": "integer"
+    }
+  },
+  "required": [
+    "leaf_index",
+    "tree_size",
+    "leaf_hash",
+    "audit_path"
+  ],
+  "title": "InclusionProof",
+  "type": "object"
+}

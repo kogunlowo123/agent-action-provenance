@@ -1,0 +1,43 @@
+{
+  "$id": "https://github.com/kogunlowo123/agent-action-provenance/schemas/verification-report.response.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "properties": {
+    "leaf_index": {
+      "title": "Leaf Index",
+      "type": "integer"
+    },
+    "problems": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Problems",
+      "type": "array"
+    },
+    "record_id": {
+      "title": "Record Id",
+      "type": "string"
+    },
+    "root_hash": {
+      "title": "Root Hash",
+      "type": "string"
+    },
+    "tree_size": {
+      "title": "Tree Size",
+      "type": "integer"
+    },
+    "valid": {
+      "title": "Valid",
+      "type": "boolean"
+    }
+  },
+  "required": [
+    "record_id",
+    "leaf_index",
+    "tree_size",
+    "root_hash",
+    "valid",
+    "problems"
+  ],
+  "title": "VerificationReport",
+  "type": "object"
+}

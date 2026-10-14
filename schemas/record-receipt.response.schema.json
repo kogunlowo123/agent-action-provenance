@@ -1,0 +1,188 @@
+{
+  "$defs": {
+    "GovernanceAssessment": {
+      "properties": {
+        "compliant": {
+          "title": "Compliant",
+          "type": "boolean"
+        },
+        "findings": {
+          "items": {
+            "$ref": "#/$defs/GovernanceFinding"
+          },
+          "title": "Findings",
+          "type": "array"
+        }
+      },
+      "required": [
+        "compliant",
+        "findings"
+      ],
+      "title": "GovernanceAssessment",
+      "type": "object"
+    },
+    "GovernanceFinding": {
+      "properties": {
+        "code": {
+          "title": "Code",
+          "type": "string"
+        },
+        "detail": {
+          "title": "Detail",
+          "type": "string"
+        },
+        "severity": {
+          "$ref": "#/$defs/Severity"
+        }
+      },
+      "required": [
+        "code",
+        "severity",
+        "detail"
+      ],
+      "title": "GovernanceFinding",
+      "type": "object"
+    },
+    "InclusionProof": {
+      "properties": {
+        "audit_path": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Audit Path",
+          "type": "array"
+        },
+        "leaf_hash": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Leaf Hash",
+          "type": "string"
+        },
+        "leaf_index": {
+          "minimum": 0,
+          "title": "Leaf Index",
+          "type": "integer"
+        },
+        "tree_size": {
+          "minimum": 1,
+          "title": "Tree Size",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "leaf_index",
+        "tree_size",
+        "leaf_hash",
+        "audit_path"
+      ],
+      "title": "InclusionProof",
+      "type": "object"
+    },
+    "Severity": {
+      "enum": [
+        "info",
+        "warning",
+        "violation"
+      ],
+      "title": "Severity",
+      "type": "string"
+    },
+    "SignedTreeHead": {
+      "description": "Ed25519 signature over the canonical JSON of the unsigned fields.",
+      "properties": {
+        "log_id": {
+          "description": "SHA-256 of the log key SPKI",
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Log Id",
+          "type": "string"
+        },
+        "root_hash": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Root Hash",
+          "type": "string"
+        },
+        "signature": {
+          "description": "Base64 Ed25519 signature",
+          "title": "Signature",
+          "type": "string"
+        },
+        "timestamp": {
+          "description": "Milliseconds since the Unix epoch",
+          "minimum": 0,
+          "title": "Timestamp",
+          "type": "integer"
+        },
+        "tree_size": {
+          "minimum": 0,
+          "title": "Tree Size",
+          "type": "integer"
+        },
+        "version": {
+          "default": "aap-sth/v1",
+          "title": "Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "log_id",
+        "tree_size",
+        "root_hash",
+        "timestamp",
+        "signature"
+      ],
+      "title": "SignedTreeHead",
+      "type": "object"
+    }
+  },
+  "$id": "https://github.com/kogunlowo123/agent-action-provenance/schemas/record-receipt.response.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "description": "Returned when a record is sealed: everything needed to verify inclusion later.",
+  "properties": {
+    "duplicate": {
+      "description": "True when an identical action was already recorded",
+      "title": "Duplicate",
+      "type": "boolean"
+    },
+    "governance": {
+      "$ref": "#/$defs/GovernanceAssessment"
+    },
+    "inclusion_proof": {
+      "$ref": "#/$defs/InclusionProof"
+    },
+    "leaf_hash": {
+      "title": "Leaf Hash",
+      "type": "string"
+    },
+    "leaf_index": {
+      "title": "Leaf Index",
+      "type": "integer"
+    },
+    "record_digest": {
+      "title": "Record Digest",
+      "type": "string"
+    },
+    "record_id": {
+      "title": "Record Id",
+      "type": "string"
+    },
+    "submission_digest": {
+      "title": "Submission Digest",
+      "type": "string"
+    },
+    "tree_head": {
+      "$ref": "#/$defs/SignedTreeHead"
+    }
+  },
+  "required": [
+    "record_id",
+    "leaf_index",
+    "leaf_hash",
+    "record_digest",
+    "submission_digest",
+    "duplicate",
+    "governance",
+    "tree_head",
+    "inclusion_proof"
+  ],
+  "title": "RecordReceipt",
+  "type": "object"
+}

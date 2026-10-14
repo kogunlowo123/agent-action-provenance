@@ -1,0 +1,62 @@
+# Local development stack: provenance engine + PostgreSQL + an OIDC provider
+# that plays both the agent credential issuer (standing in for
+# agent-identity-fabric's JWKS) and the enterprise IdP for auditors, + an
+# OpenTelemetry collector. Uses in-memory signing keys
+# (PROVENANCE_DEV_EPHEMERAL_KEYS) and the filesystem WORM archive; never use
+# this configuration outside a developer workstation.
+name: agent-action-provenance
+
+services:
+  postgres:
+    image: postgres:16.4-alpine
+    environment:
+      POSTGRES_DB: provenance
+      POSTGRES_USER: provenance
+      POSTGRES_PASSWORD: provenance-local-only
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U provenance -d provenance"]
+      interval: 5s
+      retries: 10
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+  oidc:
+    image: ghcr.io/navikt/mock-oauth2-server:2.1.10
+    environment:
+      SERVER_PORT: "8080"
+    ports:
+      - "8081:8080"
+
+  otel-collector:
+    image: otel/opentelemetry-collector-contrib:0.111.0
+    command: ["--config=/etc/otelcol/config.yaml"]
+    volumes:
+      - ./deployments/docker/otel-collector.yaml:/etc/otelcol/config.yaml:ro
+
+  provenance:
+    build: .
+    depends_on:
+      postgres:
+        condition: service_healthy
+      oidc:
+        condition: service_started
+    ports:
+      - "8080:8080"
+    environment:
+      PROVENANCE_ENVIRONMENT: development
+      PROVENANCE_DEV_EPHEMERAL_KEYS: "true"
+      PROVENANCE_PUBLIC_URL: http://localhost:8080
+      PROVENANCE_DATABASE_URL: postgresql+asyncpg://provenance:provenance-local-only@postgres:5432/provenance
+      PROVENANCE_AGENT_ISSUER: http://oidc:8080/fabric
+      PROVENANCE_AGENT_AUDIENCE: agent-platform
+      PROVENANCE_AGENT_JWKS_URL: http://oidc:8080/fabric/jwks
+      PROVENANCE_AUDITOR_ISSUER: http://oidc:8080/auditors
+      PROVENANCE_AUDITOR_AUDIENCE: agent-action-provenance
+      PROVENANCE_AUDITOR_JWKS_URL: http://oidc:8080/auditors/jwks
+      PROVENANCE_AUDIT_LOG_PATH: /var/lib/agent-action-provenance/audit/audit.jsonl
+      PROVENANCE_ARCHIVE_DIR: /var/lib/agent-action-provenance/archive
+      PROVENANCE_OTLP_ENDPOINT: http://otel-collector:4317
+      PROVENANCE_LOG_LEVEL: DEBUG
+
+volumes:
+  pgdata:

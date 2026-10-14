@@ -1,0 +1,57 @@
+{{- $p := .Values.provenance -}}
+{{- if not $p.fabricUrl }}
+{{- $_ := required "provenance.agent.issuer is required when provenance.fabricUrl is empty" $p.agent.issuer }}
+{{- $_ := required "provenance.agent.jwksUrl is required when provenance.fabricUrl is empty" $p.agent.jwksUrl }}
+{{- end }}
+{{- if eq $p.archive.backend "s3" }}
+{{- $_ := required "provenance.archive.bucket is required for the s3 archive" $p.archive.bucket }}
+{{- end }}
+{{- $full := include "provenance.fullname" . -}}
+{{- $svc := printf "%s.%s.svc" $full .Release.Namespace -}}
+{{- $hosts := concat (list $full (printf "%s.%s" $full .Release.Namespace) $svc (printf "%s.cluster.local" $svc)) $p.mcpAllowedHosts -}}
+{{- with .Values.ingress.host }}{{ $hosts = append $hosts . }}{{ end -}}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ $full }}
+  labels: {{- include "provenance.labels" . | nindent 4 }}
+data:
+  PROVENANCE_ENVIRONMENT: {{ $p.environment | quote }}
+  PROVENANCE_PUBLIC_URL: {{ required "provenance.publicUrl is required" $p.publicUrl | quote }}
+  {{- with $p.fabricUrl }}
+  PROVENANCE_FABRIC_URL: {{ . | quote }}
+  {{- end }}
+  {{- with $p.agent.issuer }}
+  PROVENANCE_AGENT_ISSUER: {{ . | quote }}
+  {{- end }}
+  PROVENANCE_AGENT_AUDIENCE: {{ $p.agent.audience | quote }}
+  {{- with $p.agent.jwksUrl }}
+  PROVENANCE_AGENT_JWKS_URL: {{ . | quote }}
+  {{- end }}
+  PROVENANCE_AUDITOR_ISSUER: {{ required "provenance.auditor.issuer is required" $p.auditor.issuer | quote }}
+  PROVENANCE_AUDITOR_AUDIENCE: {{ required "provenance.auditor.audience is required" $p.auditor.audience | quote }}
+  PROVENANCE_AUDITOR_JWKS_URL: {{ required "provenance.auditor.jwksUrl is required" $p.auditor.jwksUrl | quote }}
+  PROVENANCE_AUDITOR_ROLES_CLAIM: {{ $p.auditor.rolesClaim | quote }}
+  PROVENANCE_LOG_KEY_FILE: {{ printf "/etc/agent-action-provenance/log-key/%s" (required "secrets.logKeyFile is required" .Values.secrets.logKeyFile) | quote }}
+  PROVENANCE_AUDIT_KEY_FILE: {{ printf "/etc/agent-action-provenance/audit-key/%s" (required "secrets.auditKeyFile is required" .Values.secrets.auditKeyFile) | quote }}
+  PROVENANCE_BATCH_MAX_SIZE: {{ $p.batchMaxSize | quote }}
+  PROVENANCE_BATCH_MAX_WAIT_MS: {{ $p.batchMaxWaitMs | quote }}
+  PROVENANCE_EXPORT_MAX_RECORDS: {{ $p.exportMaxRecords | quote }}
+  PROVENANCE_MONITOR_INTERVAL_S: {{ $p.monitorIntervalSeconds | quote }}
+  PROVENANCE_ARCHIVE_BACKEND: {{ $p.archive.backend | quote }}
+  PROVENANCE_ARCHIVE_DIR: /var/lib/agent-action-provenance/archive
+  {{- with $p.archive.bucket }}
+  PROVENANCE_ARCHIVE_BUCKET: {{ . | quote }}
+  {{- end }}
+  PROVENANCE_ARCHIVE_PREFIX: {{ $p.archive.prefix | quote }}
+  {{- with $p.archive.region }}
+  PROVENANCE_ARCHIVE_REGION: {{ . | quote }}
+  {{- end }}
+  PROVENANCE_ARCHIVE_LOCK_MODE: {{ $p.archive.lockMode | quote }}
+  PROVENANCE_ARCHIVE_RETENTION_DAYS: {{ $p.archive.retentionDays | quote }}
+  PROVENANCE_ARCHIVE_INTERVAL_S: {{ $p.archive.intervalSeconds | quote }}
+  PROVENANCE_MCP_ALLOWED_HOSTS: {{ $hosts | toJson | quote }}
+  PROVENANCE_LOG_LEVEL: {{ $p.logLevel | quote }}
+  {{- with $p.otlpEndpoint }}
+  PROVENANCE_OTLP_ENDPOINT: {{ . | quote }}
+  {{- end }}

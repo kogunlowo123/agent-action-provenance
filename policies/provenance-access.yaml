@@ -1,0 +1,59 @@
+# Agent access to the provenance engine, evaluated by the local agentic-core
+# PolicyEngine when PROVENANCE_FABRIC_URL is not set. With the identity fabric
+# configured, the same action names are authorized by the fabric's
+# /v1/authorize and its policy set instead.
+# Combining: deny overrides, then require_approval, then allow; default deny.
+#
+# Subject attributes come from the verified agent credential: scopes,
+# action_in_scope (the requested action matches a credential scope; scopes may
+# use wildcards such as provenance:*), delegated, delegation_depth, risk.
+# Resource attributes for agent-action: agent_id, own_action, action, risk.
+#
+# Actions:
+#   provenance:record:write     record an action the caller itself performed
+#   provenance:record:delegate  record on behalf of another agent (gateways)
+#   provenance:log:read         proofs and tree heads through MCP/A2A tools
+#   provenance:lineage:read     artifact lineage through MCP
+name: provenance-access
+version: "2026.10.0"
+rules:
+  - id: deny-delegated-recording-by-delegates
+    description: >-
+      Only a directly authenticated gateway may record for other agents; a
+      credential obtained by delegation cannot.
+    effect: deny
+    actions: ["provenance:record:delegate"]
+    conditions:
+      - {attribute: subject.delegated, operator: eq, value: true}
+
+  - id: deny-own-record-mismatch
+    description: The write action is valid only for the caller's own actions.
+    effect: deny
+    actions: ["provenance:record:write"]
+    resource_types: ["agent-action"]
+    conditions:
+      - {attribute: resource.own_action, operator: eq, value: false}
+
+  - id: allow-scoped-recording
+    description: An agent may record its own actions when its credential carries the scope.
+    effect: allow
+    actions: ["provenance:record:write"]
+    resource_types: ["agent-action"]
+    conditions:
+      - {attribute: subject.action_in_scope, operator: eq, value: true}
+      - {attribute: resource.own_action, operator: eq, value: true}
+
+  - id: allow-gateway-recording
+    description: Gateways holding provenance:record:delegate may record for the agents they front.
+    effect: allow
+    actions: ["provenance:record:delegate"]
+    resource_types: ["agent-action"]
+    conditions:
+      - {attribute: subject.action_in_scope, operator: eq, value: true}
+
+  - id: allow-scoped-reads
+    description: Proof, tree head and lineage reads require the matching scope.
+    effect: allow
+    actions: ["provenance:log:read", "provenance:lineage:read"]
+    conditions:
+      - {attribute: subject.action_in_scope, operator: eq, value: true}

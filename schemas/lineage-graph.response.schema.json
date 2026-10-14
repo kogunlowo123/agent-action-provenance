@@ -1,0 +1,111 @@
+{
+  "$defs": {
+    "LineageEdge": {
+      "properties": {
+        "relation": {
+          "description": "wasGeneratedBy | used | wasDerivedFrom",
+          "title": "Relation",
+          "type": "string"
+        },
+        "source": {
+          "title": "Source",
+          "type": "string"
+        },
+        "target": {
+          "title": "Target",
+          "type": "string"
+        }
+      },
+      "required": [
+        "source",
+        "target",
+        "relation"
+      ],
+      "title": "LineageEdge",
+      "type": "object"
+    },
+    "LineageRecord": {
+      "properties": {
+        "action": {
+          "title": "Action",
+          "type": "string"
+        },
+        "agent_id": {
+          "title": "Agent Id",
+          "type": "string"
+        },
+        "compliant": {
+          "title": "Compliant",
+          "type": "boolean"
+        },
+        "leaf_index": {
+          "title": "Leaf Index",
+          "type": "integer"
+        },
+        "record_id": {
+          "title": "Record Id",
+          "type": "string"
+        },
+        "recorded_at": {
+          "format": "date-time",
+          "title": "Recorded At",
+          "type": "string"
+        },
+        "status": {
+          "title": "Status",
+          "type": "string"
+        }
+      },
+      "required": [
+        "record_id",
+        "leaf_index",
+        "agent_id",
+        "action",
+        "status",
+        "compliant",
+        "recorded_at"
+      ],
+      "title": "LineageRecord",
+      "type": "object"
+    }
+  },
+  "$id": "https://github.com/kogunlowo123/agent-action-provenance/schemas/lineage-graph.response.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "properties": {
+    "depth": {
+      "title": "Depth",
+      "type": "integer"
+    },
+    "edges": {
+      "items": {
+        "$ref": "#/$defs/LineageEdge"
+      },
+      "title": "Edges",
+      "type": "array"
+    },
+    "records": {
+      "items": {
+        "$ref": "#/$defs/LineageRecord"
+      },
+      "title": "Records",
+      "type": "array"
+    },
+    "root": {
+      "title": "Root",
+      "type": "string"
+    },
+    "truncated": {
+      "title": "Truncated",
+      "type": "boolean"
+    }
+  },
+  "required": [
+    "root",
+    "depth",
+    "truncated",
+    "records",
+    "edges"
+  ],
+  "title": "LineageGraph",
+  "type": "object"
+}

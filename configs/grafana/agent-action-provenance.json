@@ -1,0 +1,72 @@
+{
+  "title": "Agent Action Provenance",
+  "uid": "agent-action-provenance",
+  "schemaVersion": 39,
+  "time": {"from": "now-6h", "to": "now"},
+  "templating": {
+    "list": [
+      {"name": "datasource", "type": "datasource", "query": "prometheus"}
+    ]
+  },
+  "panels": [
+    {
+      "id": 1, "type": "stat", "title": "Record submissions succeeding (5m)",
+      "gridPos": {"x": 0, "y": 0, "w": 6, "h": 4},
+      "datasource": {"type": "prometheus", "uid": "${datasource}"},
+      "fieldConfig": {"defaults": {"unit": "percentunit", "decimals": 3}},
+      "targets": [{"expr": "1 - provenance:record_errors:ratio_5m"}]
+    },
+    {
+      "id": 2, "type": "stat", "title": "Log size (signed)",
+      "gridPos": {"x": 6, "y": 0, "w": 6, "h": 4},
+      "datasource": {"type": "prometheus", "uid": "${datasource}"},
+      "targets": [{"expr": "max(provenance_log_tree_size)"}]
+    },
+    {
+      "id": 3, "type": "stat", "title": "Archive backlog (batches)",
+      "gridPos": {"x": 12, "y": 0, "w": 6, "h": 4},
+      "datasource": {"type": "prometheus", "uid": "${datasource}"},
+      "targets": [{"expr": "max(provenance_archive_backlog)"}]
+    },
+    {
+      "id": 4, "type": "stat", "title": "Failed integrity checks (24h)",
+      "gridPos": {"x": 18, "y": 0, "w": 6, "h": 4},
+      "datasource": {"type": "prometheus", "uid": "${datasource}"},
+      "targets": [{"expr": "sum(increase(provenance_integrity_checks_total{result=\"failed\"}[24h]))"}]
+    },
+    {
+      "id": 5, "type": "timeseries", "title": "Records sealed by status and compliance",
+      "gridPos": {"x": 0, "y": 4, "w": 12, "h": 8},
+      "datasource": {"type": "prometheus", "uid": "${datasource}"},
+      "targets": [{"expr": "sum by (status, compliant) (rate(provenance_records_total[5m]))", "legendFormat": "{{status}} compliant={{compliant}}"}]
+    },
+    {
+      "id": 6, "type": "timeseries", "title": "Governance findings",
+      "gridPos": {"x": 12, "y": 4, "w": 12, "h": 8},
+      "datasource": {"type": "prometheus", "uid": "${datasource}"},
+      "targets": [{"expr": "sum by (code, severity) (increase(provenance_governance_findings_total[1h]))", "legendFormat": "{{severity}} {{code}}"}]
+    },
+    {
+      "id": 7, "type": "timeseries", "title": "Batch size and seal latency (p99)",
+      "gridPos": {"x": 0, "y": 12, "w": 12, "h": 8},
+      "datasource": {"type": "prometheus", "uid": "${datasource}"},
+      "targets": [
+        {"expr": "histogram_quantile(0.5, sum by (le) (rate(provenance_batch_size_bucket[5m])))", "legendFormat": "median batch size"},
+        {"expr": "histogram_quantile(0.99, sum by (le) (rate(provenance_batch_seal_seconds_bucket[5m])))", "legendFormat": "p99 seal seconds"}
+      ]
+    },
+    {
+      "id": 8, "type": "timeseries", "title": "p99 latency by route",
+      "gridPos": {"x": 12, "y": 12, "w": 12, "h": 8},
+      "datasource": {"type": "prometheus", "uid": "${datasource}"},
+      "fieldConfig": {"defaults": {"unit": "s"}},
+      "targets": [{"expr": "histogram_quantile(0.99, sum by (le, route) (rate(provenance_http_request_duration_seconds_bucket[5m])))", "legendFormat": "{{route}}"}]
+    },
+    {
+      "id": 9, "type": "timeseries", "title": "Caller authorization decisions",
+      "gridPos": {"x": 0, "y": 20, "w": 24, "h": 7},
+      "datasource": {"type": "prometheus", "uid": "${datasource}"},
+      "targets": [{"expr": "sum by (action, decision) (rate(provenance_authorization_decisions_total[5m]))", "legendFormat": "{{action}} {{decision}}"}]
+    }
+  ]
+}

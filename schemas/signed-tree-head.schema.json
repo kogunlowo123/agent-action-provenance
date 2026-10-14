@@ -1,0 +1,48 @@
+{
+  "$id": "https://github.com/kogunlowo123/agent-action-provenance/schemas/signed-tree-head.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "description": "Ed25519 signature over the canonical JSON of the unsigned fields.",
+  "properties": {
+    "log_id": {
+      "description": "SHA-256 of the log key SPKI",
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Log Id",
+      "type": "string"
+    },
+    "root_hash": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Root Hash",
+      "type": "string"
+    },
+    "signature": {
+      "description": "Base64 Ed25519 signature",
+      "title": "Signature",
+      "type": "string"
+    },
+    "timestamp": {
+      "description": "Milliseconds since the Unix epoch",
+      "minimum": 0,
+      "title": "Timestamp",
+      "type": "integer"
+    },
+    "tree_size": {
+      "minimum": 0,
+      "title": "Tree Size",
+      "type": "integer"
+    },
+    "version": {
+      "default": "aap-sth/v1",
+      "title": "Version",
+      "type": "string"
+    }
+  },
+  "required": [
+    "log_id",
+    "tree_size",
+    "root_hash",
+    "timestamp",
+    "signature"
+  ],
+  "title": "SignedTreeHead",
+  "type": "object"
+}

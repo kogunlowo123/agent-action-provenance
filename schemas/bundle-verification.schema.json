@@ -1,0 +1,81 @@
+{
+  "$defs": {
+    "EntryVerification": {
+      "properties": {
+        "leaf_index": {
+          "title": "Leaf Index",
+          "type": "integer"
+        },
+        "problems": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Problems",
+          "type": "array"
+        },
+        "record_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Record Id"
+        },
+        "valid": {
+          "title": "Valid",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "record_id",
+        "leaf_index",
+        "valid",
+        "problems"
+      ],
+      "title": "EntryVerification",
+      "type": "object"
+    }
+  },
+  "$id": "https://github.com/kogunlowo123/agent-action-provenance/schemas/bundle-verification.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "properties": {
+    "entries": {
+      "items": {
+        "$ref": "#/$defs/EntryVerification"
+      },
+      "title": "Entries",
+      "type": "array"
+    },
+    "problems": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Problems",
+      "type": "array"
+    },
+    "root_hash": {
+      "title": "Root Hash",
+      "type": "string"
+    },
+    "tree_size": {
+      "title": "Tree Size",
+      "type": "integer"
+    },
+    "valid": {
+      "title": "Valid",
+      "type": "boolean"
+    }
+  },
+  "required": [
+    "valid",
+    "tree_size",
+    "root_hash",
+    "problems",
+    "entries"
+  ],
+  "title": "BundleVerification",
+  "type": "object"
+}
